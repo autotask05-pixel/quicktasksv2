@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EfficeintNLP UI</title>
+    <style>
+        :root {
+            --bg: #f3efe6;
+            --panel: rgba(255, 251, 245, 0.92);
+            --panel-strong: #fffaf1;
+            --ink: #1d1a16;
+            --muted: #6d6256;
+            --line: rgba(29, 26, 22, 0.12);
+            --accent: #c2551a;
+            --accent-dark: #8d3810;
+            --accent-soft: rgba(194, 85, 26, 0.12);
+            --success: #1f7a45;
+            --error: #a12f2f;
+            --shadow: 0 18px 60px rgba(64, 40, 17, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(194, 85, 26, 0.22), transparent 28%),
+                radial-gradient(circle at right, rgba(79, 108, 79, 0.14), transparent 22%),
+                linear-gradient(180deg, #f8f1e4 0%, var(--bg) 100%);
+        }
+
+        .shell {
+            display: grid;
+            grid-template-columns: minmax(360px, 1.2fr) minmax(320px, 0.95fr);
+            gap: 20px;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(14px);
+            overflow: hidden;
+        }
+
+        .chat-panel {
+            display: grid;
+            grid-template-rows: auto auto 1fr auto;
+        }
+
+        .sidebar {
+            display: grid;
+            grid-template-rows: auto auto auto 1fr;
+            gap: 20px;
+        }
+
+        .panel-header {
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .section {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .eyebrow {
+            margin: 0 0 8px;
+            color: var(--accent-dark);
+            font-size: 12px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        h1, h2, h3 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .subtle, .hint {
+            color: var(--muted);
+        }
+
+        .hint {
+            font-size: 13px;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .grow {
+            flex: 1 1 220px;
+        }
+
+        textarea,
+        input[type="text"] {
+            width: 100%;
+            border: 1px solid rgba(29, 26, 22, 0.12);
+            border-radius: 16px;
+            padding: 12px 14px;
+            font: inherit;
+            background: #fffdf9;
+            color: var(--ink);
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        input[type="file"] {
+            width: 100%;
+        }
+
+        button {
+            border: none;
+            border-radius: 999px;
+            padding: 11px 18px;
+            font: inherit;
+            cursor: pointer;
+            transition: transform 120ms ease, opacity 120ms ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: progress;
+            transform: none;
+        }
+
+        .primary {
+            background: var(--accent);
+            color: #fff7ef;
+        }
+
+        .secondary {
+            background: rgba(29, 26, 22, 0.08);
+            color: var(--ink);
+        }
+
+        .danger {
+            background: #b74131;
+            color: #fff6f4;
+        }
+
+        .messages {
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .message {
+            max-width: min(82%, 760px);
+            padding: 14px 16px;
+            border-radius: 18px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #1d1a16 0%, #3a2d21 100%);
+            color: #f8f3ea;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background: var(--panel-strong);
+            border: 1px solid rgba(29, 26, 22, 0.08);
+            border-bottom-left-radius: 6px;
+        }
+
+        .message.system {
+            align-self: center;
+            max-width: 94%;
+            background: var(--accent-soft);
+            border: 1px dashed rgba(194, 85, 26, 0.25);
+            color: var(--accent-dark);
+        }
+
+        .composer {
+            display: grid;
+            gap: 14px;
+            padding: 20px 24px 24px;
+            background: rgba(255, 250, 241, 0.94);
+        }
+
+        .file-list,
+        .agent-list,
+        .model-grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .file-card,
+        .agent-item,
+        .model-card {
+            display: grid;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(29, 26, 22, 0.08);
+        }
+
+        .file-card header,
+        .agent-item header,
+        .model-card header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: baseline;
+        }
+
+        .file-name {
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            border-radius: 999px;
+            padding: 7px 12px;
+            background: rgba(29, 26, 22, 0.06);
+            color: var(--muted);
+        }
+
+        .status-chip.ok {
+            background: rgba(31, 122, 69, 0.12);
+            color: var(--success);
+        }
+
+        .status-chip.error {
+            background: rgba(161, 47, 47, 0.12);
+            color: var(--error);
+        }
+
+        .logs {
+            flex: 1;
+            margin: 0;
+            padding: 18px 20px 22px;
+            overflow-y: auto;
+            background: #161310;
+            color: #efe2cf;
+            font: 13px/1.5 "Courier New", monospace;
+            white-space: pre-wrap;
+            min-height: 260px;
+        }
+
+        .agent-item.active {
+            border-color: rgba(194, 85, 26, 0.4);
+            background: rgba(194, 85, 26, 0.08);
+        }
+
+        .compact-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 1080px) {
+            .shell {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                grid-template-rows: auto auto auto auto;
+            }
+            .message {
+                max-width: 92%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <section class="panel chat-panel">
+            <div class="panel-header">
+                <p class="eyebrow">Workspace Console</p>
+                <h1>EfficeintNLP</h1>
+                <p class="subtle">Multi-file testing, saved agents, and live model reload from the browser.</p>
+            </div>
+
+            <div class="section">
+                <div class="row">
+                    <div class="grow">
+                        <label for="agent-file-input">Import agent config</label>
+                        <input type="file" id="agent-file-input" accept=".json">
+                    </div>
+                    <button id="load-agent-button" class="primary">Import + Load</button>
+                    <div id="current-agent-name" class="status-chip">Current agent: Default</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="row" style="justify-content: space-between;">
+                    <div>
+                        <h3>Saved Agents</h3>
+                        <div class="hint">Click a card to load it immediately. The last active agent auto-loads on refresh.</div>
+                    </div>
+                    <button id="clear-saved-agents-button" class="danger">Clear Saved</button>
+                </div>
+                <div id="saved-agents-list" class="agent-list"></div>
+            </div>
+
+            <div class="messages" id="chat-container"></div>
+
+            <div class="composer">
+                <div>
+                    <label for="user-input">Query</label>
+                    <textarea id="user-input" placeholder="Ask something. Use file labels or order if the selected function expects files."></textarea>
+                </div>
+
+                <div>
+                    <label for="query-file-input">Attach files</label>
+                    <input type="file" id="query-file-input" multiple>
+                    <div class="hint">Selecting more files appends to the queue. Reorder them or assign labels like <code>first</code>, <code>second</code>, or <code>documents</code>.</div>
+                    <div id="selected-files" class="file-list"></div>
+                </div>
+
+                <div class="row">
+                    <button id="send-button" class="primary">Send Query</button>
+                    <button id="clear-files-button" class="secondary" type="button">Clear Files</button>
+                </div>
+            </div>
+        </section>
+
+        <aside class="sidebar">
+            <section class="panel">
+                <div class="panel-header">
+                    <p class="eyebrow">Session</p>
+                    <h2>Request Status</h2>
+                </div>
+                <div class="section">
+                    <div id="request-status" class="status-chip">Idle</div>
+                    <div class="hint" id="request-summary" style="margin-top: 10px;">No requests sent yet.</div>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <p class="eyebrow">Advanced Testing</p>
+                    <h2>Model Replacement</h2>
+                    <p class="subtle">Upload replacement model or tokenizer files, then reload them without restarting the server.</p>
+                </div>
+                <div class="section">
+                    <div class="model-grid">
+                        <div class="model-card">
+                            <header><div class="file-name">Router Model</div><div class="hint">`models/gte/model.onnx`</div></header>
+                            <input type="file" id="gte-model-file" accept=".onnx">
+                        </div>
+                        <div class="model-card">
+                            <header><div class="file-name">Router Tokenizer</div><div class="hint">`models/gte/tokenizer.json`</div></header>
+                            <input type="file" id="gte-tokenizer-file" accept=".json">
+                        </div>
+                        <div class="model-card">
+                            <header><div class="file-name">GLiNER Model</div><div class="hint">`models/gliner/model.onnx`</div></header>
+                            <input type="file" id="gliner-model-file" accept=".onnx">
+                        </div>
+                        <div class="model-card">
+                            <header><div class="file-name">GLiNER Tokenizer</div><div class="hint">`models/gliner/tokenizer.json`</div></header>
+                            <input type="file" id="gliner-tokenizer-file" accept=".json">
+                        </div>
+                    </div>
+                    <div class="compact-actions" style="margin-top: 14px;">
+                        <button id="apply-models-button" class="primary" type="button">Upload + Reload Models</button>
+                        <button id="reload-models-button" class="secondary" type="button">Reload Current Files</button>
+                    </div>
+                    <div id="models-status" class="hint" style="margin-top: 10px;">No model replacement applied yet.</div>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <p class="eyebrow">Runtime</p>
+                    <h2>Server Logs</h2>
+                    <p class="subtle">Recent application logs only.</p>
+                </div>
+                <pre id="logs-output" class="logs">Waiting for logs...</pre>
+            </section>
+        </aside>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const queryFileInput = document.getElementById('query-file-input');
+        const clearFilesButton = document.getElementById('clear-files-button');
+        const selectedFiles = document.getElementById('selected-files');
+        const requestStatus = document.getElementById('request-status');
+        const requestSummary = document.getElementById('request-summary');
+        const logsOutput = document.getElementById('logs-output');
+        const agentFileInput = document.getElementById('agent-file-input');
+        const loadAgentButton = document.getElementById('load-agent-button');
+        const currentAgentName = document.getElementById('current-agent-name');
+        const savedAgentsList = document.getElementById('saved-agents-list');
+        const clearSavedAgentsButton = document.getElementById('clear-saved-agents-button');
+        const applyModelsButton = document.getElementById('apply-models-button');
+        const reloadModelsButton = document.getElementById('reload-models-button');
+        const modelsStatus = document.getElementById('models-status');
+
+        const LOCAL_STORAGE_KEY = 'efficeintnlp_agents_v2';
+        const ACTIVE_AGENT_KEY = 'efficeintnlp_active_agent_v2';
+        const MODEL_FIELDS = [
+            { target: 'gte_model', elementId: 'gte-model-file', label: 'Router model' },
+            { target: 'gte_tokenizer', elementId: 'gte-tokenizer-file', label: 'Router tokenizer' },
+            { target: 'gliner_model', elementId: 'gliner-model-file', label: 'GLiNER model' },
+            { target: 'gliner_tokenizer', elementId: 'gliner-tokenizer-file', label: 'GLiNER tokenizer' },
+        ];
+
+        let attachedFiles = [];
+        let logsCursor = 0;
+        let autoLoadedAgent = false;
+
+        function appendMessage(kind, text) {
+            const message = document.createElement('div');
+            message.className = `message ${kind}`;
+            message.textContent = text;
+            chatContainer.appendChild(message);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function setStatus(label, mode, summary) {
+            requestStatus.textContent = label;
+            requestStatus.className = `status-chip${mode ? ` ${mode}` : ''}`;
+            requestSummary.textContent = summary;
+        }
+
+        function fileFingerprint(file) {
+            return `${file.name}:${file.size}:${file.lastModified}`;
+        }
+
+        function appendFiles(files) {
+            const seen = new Set(attachedFiles.map((entry) => fileFingerprint(entry.file)));
+            for (const file of files) {
+                const fingerprint = fileFingerprint(file);
+                if (seen.has(fingerprint)) {
+                    continue;
+                }
+                seen.add(fingerprint);
+                attachedFiles.push({ file, label: '' });
+            }
+            renderSelectedFiles();
+        }
+
+        function moveFile(index, direction) {
+            const nextIndex = index + direction;
+            if (nextIndex < 0 || nextIndex >= attachedFiles.length) {
+                return;
+            }
+            const [entry] = attachedFiles.splice(index, 1);
+            attachedFiles.splice(nextIndex, 0, entry);
+            renderSelectedFiles();
+        }
+
+        function renderSelectedFiles() {
+            selectedFiles.innerHTML = '';
+            if (attachedFiles.length === 0) {
+                selectedFiles.innerHTML = '<div class="hint">No files selected.</div>';
+                return;
+            }
+
+            attachedFiles.forEach((entry, index) => {
+                const card = document.createElement('div');
+                card.className = 'file-card';
+
+                const header = document.createElement('header');
+                const title = document.createElement('div');
+                title.className = 'file-name';
+                title.textContent = `${index + 1}. ${entry.file.name}`;
+                const size = document.createElement('div');
+                size.className = 'hint';
+                size.textContent = `${Math.max(1, Math.round(entry.file.size / 1024))} KB`;
+                header.append(title, size);
+
+                const labelInput = document.createElement('input');
+                labelInput.type = 'text';
+                labelInput.placeholder = 'Optional label, e.g. first, second, documents';
+                labelInput.value = entry.label;
+                labelInput.addEventListener('input', (event) => {
+                    attachedFiles[index].label = event.target.value;
+                });
+
+                const actions = document.createElement('div');
+                actions.className = 'compact-actions';
+
+                const upButton = document.createElement('button');
+                upButton.className = 'secondary';
+                upButton.type = 'button';
+                upButton.textContent = 'Up';
+                upButton.disabled = index === 0;
+                upButton.addEventListener('click', () => moveFile(index, -1));
+
+                const downButton = document.createElement('button');
+                downButton.className = 'secondary';
+                downButton.type = 'button';
+                downButton.textContent = 'Down';
+                downButton.disabled = index === attachedFiles.length - 1;
+                downButton.addEventListener('click', () => moveFile(index, 1));
+
+                const removeButton = document.createElement('button');
+                removeButton.className = 'secondary';
+                removeButton.type = 'button';
+                removeButton.textContent = 'Remove';
+                removeButton.addEventListener('click', () => {
+                    attachedFiles.splice(index, 1);
+                    renderSelectedFiles();
+                });
+
+                actions.append(upButton, downButton, removeButton);
+                card.append(header, labelInput, actions);
+                selectedFiles.appendChild(card);
+            });
+        }
+
+        async function uploadQueryFiles() {
+            const uploadedFiles = [];
+            for (const entry of attachedFiles) {
+                const params = new URLSearchParams({
+                    filename: entry.file.name,
+                    content_type: entry.file.type || 'application/octet-stream',
+                });
+                if (entry.label && entry.label.trim()) {
+                    params.set('label', entry.label.trim());
+                }
+
+                const uploadResponse = await fetch(`/upload/ui?${params.toString()}`, {
+                    method: 'POST',
+                    body: entry.file,
+                });
+                const uploadPayload = await uploadResponse.json();
+                if (!uploadResponse.ok) {
+                    throw new Error(uploadPayload.error || uploadPayload.message || `Failed to upload ${entry.file.name}`);
+                }
+                uploadedFiles.push(uploadPayload);
+            }
+            return uploadedFiles;
+        }
+
+        async function sendMessage() {
+            const query = userInput.value.trim();
+            if (!query) {
+                setStatus('Blocked', 'error', 'Enter a query before sending.');
+                return;
+            }
+
+            appendMessage('user', query);
+            if (attachedFiles.length > 0) {
+                appendMessage('system', `Attached files in order: ${attachedFiles.map((entry, index) => `${index + 1}:${entry.file.name}${entry.label ? ` [${entry.label}]` : ''}`).join(', ')}`);
+            }
+
+            setStatus('Sending', '', `Submitting query with ${attachedFiles.length} file(s).`);
+            sendButton.disabled = true;
+
+            try {
+                const uploadedFiles = await uploadQueryFiles();
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query,
+                        files: uploadedFiles,
+                    }),
+                });
+
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload.error || payload.message || 'Query failed');
+                }
+
+                appendMessage('bot', typeof payload.result === 'object' ? JSON.stringify(payload.result, null, 2) : payload.result);
+                setStatus('Completed', 'ok', `Function: ${payload.function}`);
+                userInput.value = '';
+                attachedFiles = [];
+                queryFileInput.value = '';
+                renderSelectedFiles();
+            } catch (error) {
+                appendMessage('bot', `Error: ${error.message}`);
+                setStatus('Failed', 'error', error.message);
+            } finally {
+                sendButton.disabled = false;
+            }
+        }
+
+        function loadAgentsFromLocalStorage() {
+            return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}');
+        }
+
+        function saveAgentToLocalStorage(name, config, sourceName) {
+            const agents = loadAgentsFromLocalStorage();
+            agents[name] = {
+                name,
+                sourceName: sourceName || name,
+                savedAt: new Date().toISOString(),
+                config,
+            };
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(agents));
+        }
+
+        function setActiveAgentName(name) {
+            localStorage.setItem(ACTIVE_AGENT_KEY, name);
+            currentAgentName.textContent = `Current agent: ${name}`;
+        }
+
+        async function sendAgentConfigToServer(agentConfig) {
+            const response = await fetch('/load_agent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(agentConfig),
+            });
+
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.error || payload.message || 'Failed to load agent');
+            }
+            return payload;
+        }
+
+        async function activateSavedAgent(agentName, agentConfig, silent = false) {
+            await sendAgentConfigToServer(agentConfig);
+            setActiveAgentName(agentName);
+            renderSavedAgents();
+            if (!silent) {
+                appendMessage('system', `Agent "${agentName}" activated.`);
+            }
+        }
+
+        async function loadAgentFromFile() {
+            const file = agentFileInput.files[0];
+            if (!file) {
+                appendMessage('system', 'Select an agent config file first.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const agentConfig = JSON.parse(event.target.result);
+                    const name = agentConfig.agentName || file.name.replace(/\.json$/i, '') || 'Unnamed Agent';
+                    await activateSavedAgent(name, agentConfig, true);
+                    saveAgentToLocalStorage(name, agentConfig, file.name);
+                    renderSavedAgents();
+                    appendMessage('system', `Agent "${name}" imported and loaded.`);
+                } catch (error) {
+                    appendMessage('bot', `Error loading agent: ${error.message}`);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function deleteSavedAgent(agentName) {
+            const agents = loadAgentsFromLocalStorage();
+            delete agents[agentName];
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(agents));
+            if (localStorage.getItem(ACTIVE_AGENT_KEY) === agentName) {
+                localStorage.removeItem(ACTIVE_AGENT_KEY);
+                currentAgentName.textContent = 'Current agent: Default';
+            }
+            renderSavedAgents();
+        }
+
+        function renderSavedAgents() {
+            savedAgentsList.innerHTML = '';
+            const agents = loadAgentsFromLocalStorage();
+            const activeAgent = localStorage.getItem(ACTIVE_AGENT_KEY);
+            const names = Object.keys(agents).sort((a, b) => {
+                return new Date(agents[b].savedAt).getTime() - new Date(agents[a].savedAt).getTime();
+            });
+
+            if (names.length === 0) {
+                savedAgentsList.innerHTML = '<div class="hint">No saved agents.</div>';
+                return;
+            }
+
+            names.forEach((name) => {
+                const record = agents[name];
+                const item = document.createElement('div');
+                item.className = `agent-item${activeAgent === name ? ' active' : ''}`;
+
+                const header = document.createElement('header');
+                const title = document.createElement('div');
+                title.className = 'file-name';
+                title.textContent = name;
+                const timestamp = document.createElement('div');
+                timestamp.className = 'hint';
+                timestamp.textContent = new Date(record.savedAt).toLocaleString();
+                header.append(title, timestamp);
+
+                const meta = document.createElement('div');
+                meta.className = 'hint';
+                meta.textContent = `Source: ${record.sourceName}`;
+
+                const actions = document.createElement('div');
+                actions.className = 'compact-actions';
+
+                const loadButton = document.createElement('button');
+                loadButton.className = activeAgent === name ? 'primary' : 'secondary';
+                loadButton.textContent = activeAgent === name ? 'Loaded' : 'Load';
+                loadButton.addEventListener('click', () => activateSavedAgent(name, record.config));
+
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'secondary';
+                deleteButton.textContent = 'Delete';
+                deleteButton.addEventListener('click', () => deleteSavedAgent(name));
+
+                actions.append(loadButton, deleteButton);
+                item.append(header, meta, actions);
+                item.addEventListener('dblclick', () => activateSavedAgent(name, record.config));
+                savedAgentsList.appendChild(item);
+            });
+        }
+
+        function clearSavedAgents() {
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+            localStorage.removeItem(ACTIVE_AGENT_KEY);
+            renderSavedAgents();
+            currentAgentName.textContent = 'Current agent: Default';
+            appendMessage('system', 'Saved agents cleared.');
+        }
+
+        async function autoLoadLastAgent() {
+            if (autoLoadedAgent) {
+                return;
+            }
+            autoLoadedAgent = true;
+            const activeAgent = localStorage.getItem(ACTIVE_AGENT_KEY);
+            if (!activeAgent) {
+                return;
+            }
+            const agents = loadAgentsFromLocalStorage();
+            const record = agents[activeAgent];
+            if (!record) {
+                return;
+            }
+            try {
+                await activateSavedAgent(activeAgent, record.config, true);
+                appendMessage('system', `Auto-loaded saved agent "${activeAgent}".`);
+            } catch (error) {
+                appendMessage('bot', `Auto-load failed: ${error.message}`);
+            }
+        }
+
+        async function uploadModelReplacement(target, file) {
+            const params = new URLSearchParams({
+                target,
+                filename: file.name,
+            });
+            let response;
+            try {
+                response = await fetch(`/models/upload/ui?${params.toString()}`, {
+                    method: 'POST',
+                    body: file,
+                });
+            } catch (error) {
+                throw new Error(`Could not reach the server while uploading ${file.name}. Refresh and retry.`);
+            }
+            const payload = await readJsonResponse(response);
+            if (!response.ok) {
+                throw new Error(payload.error || payload.message || `Failed to upload ${file.name}`);
+            }
+            return payload;
+        }
+
+        async function reloadModels() {
+            let response;
+            try {
+                response = await fetch('/models/reload/ui', { method: 'POST' });
+            } catch (error) {
+                throw new Error('Could not reach the server during model reload. If the server crashed or the page is stale, refresh and retry.');
+            }
+            const payload = await readJsonResponse(response);
+            if (!response.ok) {
+                throw new Error(payload.error || payload.message || 'Failed to reload models');
+            }
+            return payload;
+        }
+
+        async function readJsonResponse(response) {
+            const text = await response.text();
+            if (!text) {
+                return {};
+            }
+            try {
+                return JSON.parse(text);
+            } catch (error) {
+                return { error: text };
+            }
+        }
+
+        async function applyModelReplacements() {
+            applyModelsButton.disabled = true;
+            reloadModelsButton.disabled = true;
+            try {
+                const replacements = [];
+                for (const field of MODEL_FIELDS) {
+                    const file = document.getElementById(field.elementId).files[0];
+                    if (!file) {
+                        continue;
+                    }
+                    const payload = await uploadModelReplacement(field.target, file);
+                    replacements.push(`${field.label}: ${payload.filename}`);
+                }
+
+                if (replacements.length === 0) {
+                    modelsStatus.textContent = 'Choose at least one replacement file first.';
+                    return;
+                }
+
+                await reloadModels();
+                modelsStatus.textContent = `Reloaded models with replacements: ${replacements.join(', ')}`;
+                appendMessage('system', `Models reloaded. ${replacements.join(', ')}`);
+            } catch (error) {
+                modelsStatus.textContent = error.message;
+                appendMessage('bot', `Model reload error: ${error.message}`);
+            } finally {
+                applyModelsButton.disabled = false;
+                reloadModelsButton.disabled = false;
+            }
+        }
+
+        async function reloadCurrentModelsOnly() {
+            applyModelsButton.disabled = true;
+            reloadModelsButton.disabled = true;
+            try {
+                await reloadModels();
+                modelsStatus.textContent = 'Reloaded current model/tokenizer files from disk.';
+                appendMessage('system', 'Models reloaded from current files.');
+            } catch (error) {
+                modelsStatus.textContent = error.message;
+                appendMessage('bot', `Model reload error: ${error.message}`);
+            } finally {
+                applyModelsButton.disabled = false;
+                reloadModelsButton.disabled = false;
+            }
+        }
+
+        async function pollLogs() {
+            try {
+                const response = await fetch(`/logs?since=${logsCursor}`);
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload.error || 'Failed to fetch logs');
+                }
+                if (payload.entries.length > 0) {
+                    const existing = logsOutput.textContent === 'Waiting for logs...' ? '' : `${logsOutput.textContent}\n`;
+                    logsOutput.textContent = `${existing}${payload.entries.map((entry) => entry.line).join('\n')}`.trim();
+                    logsOutput.scrollTop = logsOutput.scrollHeight;
+                }
+                logsCursor = payload.next_cursor;
+            } catch (error) {
+                logsOutput.textContent = `Log polling error: ${error.message}`;
+            }
+        }
+
+        queryFileInput.addEventListener('change', () => {
+            appendFiles(Array.from(queryFileInput.files));
+            queryFileInput.value = '';
+        });
+        clearFilesButton.addEventListener('click', () => {
+            attachedFiles = [];
+            queryFileInput.value = '';
+            renderSelectedFiles();
+        });
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+                sendMessage();
+            }
+        });
+        loadAgentButton.addEventListener('click', loadAgentFromFile);
+        clearSavedAgentsButton.addEventListener('click', clearSavedAgents);
+        applyModelsButton.addEventListener('click', applyModelReplacements);
+        reloadModelsButton.addEventListener('click', reloadCurrentModelsOnly);
+
+        appendMessage('system', 'Ready. File selections append, and saved agents can be loaded in one click.');
+        renderSelectedFiles();
+        renderSavedAgents();
+        setStatus('Idle', '', 'No requests sent yet.');
+        pollLogs();
+        setInterval(pollLogs, 1500);
+        autoLoadLastAgent();
+    </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+[Unit]
+Description=efficeintnlp server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/efficeintnlp
+ExecStart=/opt/efficeintnlp/efficeintnlp
+Environment=PORT=8787
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

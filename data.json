@@ -1,0 +1,88 @@
+{
+  "agentName": "Privacy & Compliance Orchestrator",
+  "architecture": {
+    "type": "agent",
+    "name": "Privacy Orchestrator",
+    "desc": "Executes legal compliance mandates like GDPR data deletion and temporary auditor access.",
+    "children": [
+      {
+        "type": "group",
+        "name": "gdpr_operations",
+        "desc": "Managing user data lifecycles and legal deletions",
+        "children": [
+          {
+            "type": "func",
+            "name": "execute_data_purge",
+            "desc": "Permanently hard-deletes a user's Personally Identifiable Information (PII) across all systems.",
+            "children": [],
+            "parameters": [
+              { "name": "user_uuid", "tag": "user_uuid", "required": true },
+              { "name": "law_framework", "tag": "compliance_framework", "required": true }
+            ],
+            "requestTemplate": "curl -X POST https://api.compliance.corp/v1/purge/execute \\\n-H \"X-Audit-Signature: $AUDIT_KEY\" \\\n-d '{\"target_uuid\": \"#user_uuid\", \"framework\": \"#law_framework\", \"retention_override\": true}'"
+          },
+          {
+            "type": "func",
+            "name": "grant_auditor_access",
+            "desc": "Provisions temporary read-only database access to external compliance auditors.",
+            "children": [],
+            "parameters": [
+              { "name": "auditor_email", "tag": "email", "required": true },
+              { "name": "target_database", "tag": "database_name", "required": true },
+              { "name": "duration_hours", "tag": "time_duration", "required": true }
+            ],
+            "requestTemplate": "curl -X POST https://api.iam.corp/v1/roles/temporary \\\n-d '{\"identity\": \"#auditor_email\", \"resource\": \"#target_database\", \"ttl_hours\": \"#duration_hours\", \"role\": \"READ_ONLY\"}'"
+          },
+          {
+            "type": "func",
+            "name": "test_local_audit_command",
+            "desc": "Runs a local cross-platform test command using Node.js for a ticket and auditor email.",
+            "children": [],
+            "executionType": "command",
+            "commandProgram": "node",
+            "commandArgs": [
+              "-e",
+              "console.log('Audit ticket:', process.argv[1], 'email:', process.argv[2])",
+              "#ticket_id",
+              "#auditor_email"
+            ],
+            "parameters": [
+              {
+                "name": "ticket_id",
+                "required": true,
+                "extractor": "regex",
+                "pattern": "([A-Z]{2,}-\\d{2,})"
+              },
+              {
+                "name": "auditor_email",
+                "required": true,
+                "extractor": "regex",
+                "pattern": "([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})"
+              }
+            ]
+          },
+          {
+            "type": "func",
+            "name": "test_file_params_command",
+            "desc": "Runs a local command to verify labeled and ordered file parameters are passed into the function without extraction.",
+            "children": [],
+            "executionType": "command",
+            "commandProgram": "node",
+            "commandArgs": [
+              "-e",
+              "console.log(JSON.stringify({ document_a: process.argv[1], document_b: process.argv[2], documents: process.argv.slice(3) }))",
+              "#document_a",
+              "#document_b",
+              "#documents"
+            ],
+            "parameters": [
+              { "name": "document_a", "type": "file", "required": true, "acceptLabels": ["first", "left", "source"] },
+              { "name": "document_b", "type": "file", "required": true, "acceptLabels": ["second", "right", "target"] },
+              { "name": "documents", "type": "files", "required": false, "acceptLabels": ["documents", "all"] }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

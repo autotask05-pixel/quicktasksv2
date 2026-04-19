@@ -1,0 +1,30 @@
+# Changed from debian:bookworm to ubuntu:24.04 to support glibc 2.39
+FROM ubuntu:24.04
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --create-home --uid 10001 appuser
+
+WORKDIR /app
+
+# Ensure the binary has execution permissions
+COPY --chmod=755 package/efficeintnlp /usr/local/bin/efficeintnlp
+COPY package/data.json /app/config/data.json
+COPY package/static /app/static
+
+RUN mkdir -p /app/models/gte /app/models/gliner /app/config \
+    && chown -R appuser:appuser /app
+
+ENV PORT=8787
+ENV RUST_LOG=info
+ENV EFFICEINTNLP_CONFIG=/app/config/data.json
+ENV EFFICEINTNLP_MODEL_DIR=/app/models
+
+VOLUME ["/app/config", "/app/models"]
+
+USER appuser
+
+EXPOSE 8787
+
+CMD ["efficeintnlp"]

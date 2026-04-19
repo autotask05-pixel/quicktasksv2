@@ -30,44 +30,6 @@ jobs:
             binary_name: quicktasks
             variant: default
             features: ""
-
-          - os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            archive_ext: tar.gz
-            binary_name: quicktasks
-            variant: fire-and-forget
-            features: "fire-and-forget"
-
-          - os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            archive_ext: tar.gz
-            binary_name: quicktasks
-            variant: ui
-            features: "ui"
-
-          - os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            archive_ext: tar.gz
-            binary_name: quicktasks
-            variant: fire-and-forget-ui
-            features: "fire-and-forget,ui"
-
-          # -------- MAC (REDUCED) --------
-          - os: macos-14
-            target: aarch64-apple-darwin
-            archive_ext: tar.gz
-            binary_name: quicktasks
-            variant: default
-            features: ""
-
-          # -------- WINDOWS (REDUCED) --------
-          - os: windows-2022
-            target: x86_64-pc-windows-msvc
-            archive_ext: zip
-            binary_name: quicktasks.exe
-            variant: default
-            features: ""
-
     steps:
       - uses: actions/checkout@v4
 

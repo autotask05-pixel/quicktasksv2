@@ -25,7 +25,7 @@ switch ($Variant) {
 
 $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
 switch ($arch) {
-    "X64" { $archive = "efficeintnlp-$Variant-x86_64-pc-windows-msvc.zip" }
+    "X64" { $archive = "QUICKTASKS-$Variant-x86_64-pc-windows-msvc.zip" }
     default { throw "Unsupported architecture: $arch" }
 }
 
@@ -35,15 +35,15 @@ if ($Version -eq "latest") {
     $downloadUrl = "https://github.com/$Repo/releases/download/$Version/$archive"
 }
 
-$installRoot = if ($env:EFFICEINTNLP_INSTALL_DIR) { $env:EFFICEINTNLP_INSTALL_DIR } else { Join-Path $env:LOCALAPPDATA "efficeintnlp" }
+$installRoot = if ($env:EFFICEINTNLP_INSTALL_DIR) { $env:EFFICEINTNLP_INSTALL_DIR } else { Join-Path $env:LOCALAPPDATA "QUICKTASKS" }
 $binDir = if ($env:EFFICEINTNLP_BIN_DIR) { $env:EFFICEINTNLP_BIN_DIR } else { Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps" }
-$tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ("efficeintnlp-" + [System.Guid]::NewGuid().ToString("N"))
+$tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ("QUICKTASKS-" + [System.Guid]::NewGuid().ToString("N"))
 
 New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
 New-Item -ItemType Directory -Force -Path $installRoot | Out-Null
 New-Item -ItemType Directory -Force -Path $binDir | Out-Null
 
-$archivePath = Join-Path $tmpDir "efficeintnlp.zip"
+$archivePath = Join-Path $tmpDir "QUICKTASKS.zip"
 
 Write-Host "Downloading $downloadUrl"
 try {
@@ -55,8 +55,8 @@ try {
 Get-ChildItem -Force $installRoot | Remove-Item -Recurse -Force
 Expand-Archive -Path $archivePath -DestinationPath $installRoot -Force
 
-$launcherPath = Join-Path $binDir "efficeintnlp.cmd"
-$binaryPath = Join-Path $installRoot "efficeintnlp.exe"
+$launcherPath = Join-Path $binDir "QUICKTASKS.cmd"
+$binaryPath = Join-Path $installRoot "QUICKTASKS.exe"
 
 @"
 @echo off
@@ -70,5 +70,5 @@ Write-Host "Launcher:     $launcherPath"
 Write-Host "Variant:      $Variant"
 Write-Host ""
 Write-Host "Next:"
-Write-Host "  1. Run: efficeintnlp"
+Write-Host "  1. Run: QUICKTASKS"
 Write-Host "  2. The first startup downloads default models if they are missing."

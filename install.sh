@@ -50,7 +50,7 @@ case "$VARIANT" in
     ;;
 esac
 
-ARTIFACT="efficeintnlp-${VARIANT}-${ARCH_TAG}-${OS_TAG}.tar.gz"
+ARTIFACT="quicktasks-${VARIANT}-${ARCH_TAG}-${OS_TAG}.tar.gz"
 if [ "$OS_TAG" = "unknown-linux-gnu" ] && [ "$ARCH_TAG" = "aarch64" ]; then
   echo "No published Linux aarch64 archive is configured in the current workflow." >&2
   exit 1
@@ -62,7 +62,7 @@ else
   DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARTIFACT}"
 fi
 
-INSTALL_ROOT="${EFFICEINTNLP_INSTALL_DIR:-$HOME/.local/share/efficeintnlp}"
+INSTALL_ROOT="${EFFICEINTNLP_INSTALL_DIR:-$HOME/.local/share/quicktasks}"
 BIN_DIR="${EFFICEINTNLP_BIN_DIR:-$HOME/.local/bin}"
 TMP_DIR="$(mktemp -d)"
 
@@ -85,17 +85,17 @@ fi
 rm -rf "$INSTALL_ROOT"/*
 tar -xzf "$TMP_DIR/archive.tar.gz" -C "$INSTALL_ROOT"
 
-chmod +x "$INSTALL_ROOT/efficeintnlp"
-ln -sf "$INSTALL_ROOT/efficeintnlp" "$BIN_DIR/efficeintnlp"
+chmod +x "$INSTALL_ROOT/quicktasks"
+ln -sf "$INSTALL_ROOT/quicktasks" "$BIN_DIR/quicktasks"
 
 cat <<EOF
 Installed to: $INSTALL_ROOT
-Binary link:   $BIN_DIR/efficeintnlp
+Binary link:   $BIN_DIR/quicktasks
 Variant:       $VARIANT
 
 Next:
   1. Ensure $BIN_DIR is in your PATH
-  2. Run: efficeintnlp
+  2. Run: quicktasks
 
 The first startup downloads default models if they are missing.
 EOF

@@ -9,7 +9,7 @@ RUN apt-get update \
 WORKDIR /app
 
 # Ensure the binary has execution permissions
-COPY --chmod=755 package/efficeintnlp /usr/local/bin/efficeintnlp
+COPY --chmod=755 package/quicktasks /usr/local/bin/quicktasks
 COPY package/data.json /app/config/data.json
 COPY package/static /app/static
 
@@ -27,4 +27,4 @@ USER appuser
 
 EXPOSE 8787
 
-CMD ["efficeintnlp"]
+CMD ["quicktasks"]

@@ -143,12 +143,18 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      # ✅ ONLY required fix for ARM64
+      # ✅ Required for ARM64 (C++ compiler)
       - name: Install ARM64 C++ compiler
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
           sudo apt-get update
           sudo apt-get install -y g++-aarch64-linux-gnu
+
+      # ✅ Required for ARM64 (linker fix)
+      - name: Set ARM64 linker
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
 
       # -------- Build --------
       - name: Build

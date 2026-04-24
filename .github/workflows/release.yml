@@ -68,28 +68,6 @@ jobs:
             binary_name: quicktasks
             variant: fire-and-forget-ui
 
-          # ================= LINUX MUSL =================
-          - os: ubuntu-22.04
-            target: x86_64-unknown-linux-musl
-            archive_ext: tar.gz
-            binary_name: quicktasks
-            variant: default
-          - os: ubuntu-22.04
-            target: x86_64-unknown-linux-musl
-            archive_ext: tar.gz
-            binary_name: quicktasks
-            variant: fire-and-forget
-          - os: ubuntu-22.04
-            target: x86_64-unknown-linux-musl
-            archive_ext: tar.gz
-            binary_name: quicktasks
-            variant: ui
-          - os: ubuntu-22.04
-            target: x86_64-unknown-linux-musl
-            archive_ext: tar.gz
-            binary_name: quicktasks
-            variant: fire-and-forget-ui
-
           # ================= MACOS (APPLE SILICON) =================
           - os: macos-14
             target: aarch64-apple-darwin
@@ -165,14 +143,23 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      # -------- Linux deps --------
-      - name: Install MUSL tools
-        if: matrix.target == 'x86_64-unknown-linux-musl'
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
-
-      - name: Install ARM64 cross compiler
+      # -------- ARM64 Cross Setup --------
+      - name: Install ARM64 toolchain
         if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Configure ARM64 linker
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+
+      - name: Set CC/CXX for ARM64
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+          echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
 
       # -------- Build --------
       - name: Build
@@ -194,7 +181,7 @@ jobs:
         if: runner.os != 'Windows'
         run: strip target/${{ matrix.target }}/release/${{ matrix.binary_name }} || true
 
-      # -------- Archive name --------
+      # -------- Archive Name --------
       - name: Compute archive name
         shell: bash
         run: |
@@ -235,6 +222,7 @@ jobs:
         with:
           files: dist/${{ env.ARCHIVE_NAME }}
 
+  # ================= DOCKER =================
   docker:
     name: Docker (${{ matrix.variant }})
     runs-on: ubuntu-22.04

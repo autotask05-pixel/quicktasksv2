@@ -22,53 +22,150 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [default, fire-and-forget, ui, fire-and-forget-ui]
-
         include:
-          # ================= LINUX =================
+
+          # ================= LINUX x64 =================
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             archive_ext: tar.gz
             binary_name: quicktasks
+            variant: default
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: fire-and-forget
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: ui
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: fire-and-forget-ui
 
+          # ================= LINUX ARM64 =================
           - os: ubuntu-22.04
             target: aarch64-unknown-linux-gnu
             archive_ext: tar.gz
             binary_name: quicktasks
+            variant: default
+          - os: ubuntu-22.04
+            target: aarch64-unknown-linux-gnu
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: fire-and-forget
+          - os: ubuntu-22.04
+            target: aarch64-unknown-linux-gnu
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: ui
+          - os: ubuntu-22.04
+            target: aarch64-unknown-linux-gnu
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: fire-and-forget-ui
 
+          # ================= LINUX MUSL =================
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-musl
             archive_ext: tar.gz
             binary_name: quicktasks
+            variant: default
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-musl
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: fire-and-forget
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-musl
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: ui
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-musl
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: fire-and-forget-ui
 
-          # ================= MACOS =================
-          - os: macos-14 # Apple Silicon (M1/M2/M3)
+          # ================= MACOS (APPLE SILICON) =================
+          - os: macos-14
             target: aarch64-apple-darwin
             archive_ext: tar.gz
             binary_name: quicktasks
+            variant: default
+          - os: macos-14
+            target: aarch64-apple-darwin
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: fire-and-forget
+          - os: macos-14
+            target: aarch64-apple-darwin
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: ui
+          - os: macos-14
+            target: aarch64-apple-darwin
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: fire-and-forget-ui
 
-          - os: macos-13 # Intel
+          # ================= MACOS (INTEL) =================
+          - os: macos-13
             target: x86_64-apple-darwin
             archive_ext: tar.gz
             binary_name: quicktasks
+            variant: default
+          - os: macos-13
+            target: x86_64-apple-darwin
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: fire-and-forget
+          - os: macos-13
+            target: x86_64-apple-darwin
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: ui
+          - os: macos-13
+            target: x86_64-apple-darwin
+            archive_ext: tar.gz
+            binary_name: quicktasks
+            variant: fire-and-forget-ui
 
           # ================= WINDOWS =================
           - os: windows-2022
             target: x86_64-pc-windows-msvc
             archive_ext: zip
             binary_name: quicktasks.exe
+            variant: default
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            archive_ext: zip
+            binary_name: quicktasks.exe
+            variant: fire-and-forget
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            archive_ext: zip
+            binary_name: quicktasks.exe
+            variant: ui
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            archive_ext: zip
+            binary_name: quicktasks.exe
+            variant: fire-and-forget-ui
 
     steps:
       - uses: actions/checkout@v4
 
-      # ================= TOOLCHAIN =================
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
 
       - uses: Swatinem/rust-cache@v2
 
-      # ================= LINUX DEPS =================
+      # -------- Linux deps --------
       - name: Install MUSL tools
         if: matrix.target == 'x86_64-unknown-linux-musl'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
@@ -77,28 +174,33 @@ jobs:
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
 
-      # ================= BUILD =================
+      # -------- Build --------
       - name: Build
         shell: bash
         run: |
-          if [ -n "${{ matrix.features }}" ]; then
-            cargo build --release --target ${{ matrix.target }} --features "${{ matrix.features }}"
+          FEATURES=""
+          if [ "${{ matrix.variant }}" = "fire-and-forget" ]; then FEATURES="fire-and-forget"; fi
+          if [ "${{ matrix.variant }}" = "ui" ]; then FEATURES="ui"; fi
+          if [ "${{ matrix.variant }}" = "fire-and-forget-ui" ]; then FEATURES="fire-and-forget,ui"; fi
+
+          if [ -n "$FEATURES" ]; then
+            cargo build --release --target ${{ matrix.target }} --features "$FEATURES"
           else
             cargo build --release --target ${{ matrix.target }}
           fi
 
-      # ================= STRIP =================
+      # -------- Strip --------
       - name: Strip binary (Unix)
         if: runner.os != 'Windows'
         run: strip target/${{ matrix.target }}/release/${{ matrix.binary_name }} || true
 
-      # ================= ARCHIVE NAME =================
+      # -------- Archive name --------
       - name: Compute archive name
         shell: bash
         run: |
           echo "ARCHIVE_NAME=${BINARY_NAME}-${{ matrix.variant }}-${{ matrix.target }}.${{ matrix.archive_ext }}" >> $GITHUB_ENV
 
-      # ================= PACKAGE UNIX =================
+      # -------- Package (Unix) --------
       - name: Package (Unix)
         if: runner.os != 'Windows'
         run: |
@@ -107,10 +209,9 @@ jobs:
           cp Cargo.toml dist/package/ || true
           cp data.json dist/package/ || true
           cp -r static dist/package/static || true
-
           tar -C dist/package -czf dist/${ARCHIVE_NAME} .
 
-      # ================= PACKAGE WINDOWS =================
+      # -------- Package (Windows) --------
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -120,24 +221,20 @@ jobs:
           if (Test-Path "Cargo.toml") { Copy-Item Cargo.toml "dist/package/" }
           if (Test-Path "data.json") { Copy-Item data.json "dist/package/" }
           if (Test-Path "static") { Copy-Item static "dist/package/static" -Recurse }
-
           Compress-Archive -Path dist/package/* -DestinationPath "dist/$env:ARCHIVE_NAME"
 
-      # ================= UPLOAD =================
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARCHIVE_NAME }}
           path: dist/${{ env.ARCHIVE_NAME }}
 
-      # ================= RELEASE =================
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/${{ env.ARCHIVE_NAME }}
 
-  # ================= DOCKER =================
   docker:
     name: Docker (${{ matrix.variant }})
     runs-on: ubuntu-22.04
@@ -162,7 +259,6 @@ jobs:
           mkdir -p package
           tar -xzf dist/quicktasks-${{ matrix.variant }}-x86_64-unknown-linux-gnu.tar.gz -C package
 
-      # ================= DOCKER BUILDX =================
       - uses: docker/setup-buildx-action@v3
 
       - uses: docker/login-action@v3
@@ -171,7 +267,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # ================= TAGS =================
       - name: Set Docker tags
         id: tags
         run: |
@@ -181,7 +276,6 @@ jobs:
             echo "TAGS=ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ matrix.variant }}" >> $GITHUB_OUTPUT
           fi
 
-      # ================= BUILD & PUSH =================
       - name: Build & push
         uses: docker/build-push-action@v5
         with:

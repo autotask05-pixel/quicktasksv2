@@ -91,22 +91,22 @@ jobs:
             variant: fire-and-forget-ui
 
           # ================= MACOS (INTEL) =================
-          - os: macos-13
+          - os: macos-26-intel
             target: x86_64-apple-darwin
             archive_ext: tar.gz
             binary_name: quicktasks
             variant: default
-          - os: macos-13
+          - os: macos-26-intel
             target: x86_64-apple-darwin
             archive_ext: tar.gz
             binary_name: quicktasks
             variant: fire-and-forget
-          - os: macos-13
+          - os: macos-26-intel
             target: x86_64-apple-darwin
             archive_ext: tar.gz
             binary_name: quicktasks
             variant: ui
-          - os: macos-13
+          - os: macos-26-intel
             target: x86_64-apple-darwin
             archive_ext: tar.gz
             binary_name: quicktasks

@@ -1,74 +1,71 @@
 param(
-    [Parameter(Position = 0)]
-    [string]$Repo = $env:EFFICEINTNLP_REPO,
-
-    [Parameter(Position = 1)]
-    [string]$Version = $(if ($env:EFFICEINTNLP_VERSION) { $env:EFFICEINTNLP_VERSION } else { "latest" }),
-
-    [Parameter(Position = 2)]
-    [string]$Variant = $(if ($env:EFFICEINTNLP_VARIANT) { $env:EFFICEINTNLP_VARIANT } else { "default" })
+    [string]$Variant = "ui"
 )
 
-$ErrorActionPreference = "Stop"
+$REPO = "autotask05-pixel/quicktasksv2"
+$BINARY_NAME = "quicktasks.exe"
 
-if (-not $Repo) {
-    Write-Error "Usage: iwr https://raw.githubusercontent.com/OWNER/REPO/main/install.ps1 -useb -OutFile install.ps1; ./install.ps1 OWNER/REPO [version] [variant]"
-}
-
+# -------- Variant Mapping --------
 switch ($Variant) {
-    "default" { }
-    "fire-and-forget" { }
-    "default-ui" { }
-    "fire-and-forget-ui" { }
-    default { throw "Unsupported variant: $Variant. Supported variants: default, fire-and-forget, default-ui, fire-and-forget-ui" }
+    "ui" { $REAL_VARIANT = "ui" }
+    "noui" { $REAL_VARIANT = "default" }
+    "fire-and-forget" { $REAL_VARIANT = "fire-and-forget" }
+    "fire-and-forget-ui" { $REAL_VARIANT = "fire-and-forget-ui" }
+    default {
+        Write-Host " Invalid variant: $Variant"
+        exit 1
+    }
 }
 
-$arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
-switch ($arch) {
-    "X64" { $archive = "QUICKTASKS-$Variant-x86_64-pc-windows-msvc.zip" }
-    default { throw "Unsupported architecture: $arch" }
+Write-Host "🎯 Variant: $Variant → $REAL_VARIANT"
+
+# -------- ARCH --------
+$ARCH = $env:PROCESSOR_ARCHITECTURE
+
+switch ($ARCH) {
+    "AMD64" { $TARGET = "x86_64-pc-windows-msvc" }
+    "ARM64" { $TARGET = "aarch64-pc-windows-msvc" }
+    default {
+        Write-Host " Unsupported architecture: $ARCH"
+        exit 1
+    }
 }
 
-if ($Version -eq "latest") {
-    $downloadUrl = "https://github.com/$Repo/releases/latest/download/$archive"
-} else {
-    $downloadUrl = "https://github.com/$Repo/releases/download/$Version/$archive"
+# -------- VERSION --------
+$VERSION = (Invoke-RestMethod "https://api.github.com/repos/$REPO/releases/latest").tag_name
+
+if (-not $VERSION) {
+    Write-Host " Failed to fetch version"
+    exit 1
 }
 
-$installRoot = if ($env:EFFICEINTNLP_INSTALL_DIR) { $env:EFFICEINTNLP_INSTALL_DIR } else { Join-Path $env:LOCALAPPDATA "QUICKTASKS" }
-$binDir = if ($env:EFFICEINTNLP_BIN_DIR) { $env:EFFICEINTNLP_BIN_DIR } else { Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps" }
-$tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ("QUICKTASKS-" + [System.Guid]::NewGuid().ToString("N"))
+$FILE = "quicktasks-$REAL_VARIANT-$TARGET.zip"
+$URL = "https://github.com/$REPO/releases/download/$VERSION/$FILE"
 
-New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
-New-Item -ItemType Directory -Force -Path $installRoot | Out-Null
-New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+Write-Host "⬇️ $URL"
 
-$archivePath = Join-Path $tmpDir "QUICKTASKS.zip"
+$TMP = New-Item -ItemType Directory -Force -Path ([System.IO.Path]::GetTempPath() + [System.Guid]::NewGuid())
 
-Write-Host "Downloading $downloadUrl"
-try {
-    Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath
-} catch {
-    throw "Failed to download $downloadUrl. This installer only works with published GitHub release assets. GitHub Actions run artifacts are not available at releases/latest/download/... Create or use a tagged release that includes $archive, then retry."
+$ZIP = "$TMP\pkg.zip"
+
+Invoke-WebRequest $URL -OutFile $ZIP
+Expand-Archive $ZIP -DestinationPath $TMP -Force
+
+# -------- INSTALL PATH --------
+$INSTALL_DIR = "$env:LOCALAPPDATA\quicktasks"
+New-Item -ItemType Directory -Force -Path $INSTALL_DIR | Out-Null
+
+Move-Item "$TMP\$BINARY_NAME" "$INSTALL_DIR\$BINARY_NAME" -Force
+
+# -------- PATH SET --------
+$CURRENT_PATH = [Environment]::GetEnvironmentVariable("Path", "User")
+
+if ($CURRENT_PATH -notlike "*$INSTALL_DIR*") {
+    [Environment]::SetEnvironmentVariable("Path", "$CURRENT_PATH;$INSTALL_DIR", "User")
+    Write-Host "⚙️ Added to PATH"
 }
 
-Get-ChildItem -Force $installRoot | Remove-Item -Recurse -Force
-Expand-Archive -Path $archivePath -DestinationPath $installRoot -Force
+Remove-Item $TMP -Recurse -Force
 
-$launcherPath = Join-Path $binDir "QUICKTASKS.cmd"
-$binaryPath = Join-Path $installRoot "QUICKTASKS.exe"
-
-@"
-@echo off
-"$binaryPath" %*
-"@ | Set-Content -Path $launcherPath -Encoding ASCII
-
-Remove-Item -Recurse -Force $tmpDir
-
-Write-Host "Installed to: $installRoot"
-Write-Host "Launcher:     $launcherPath"
-Write-Host "Variant:      $Variant"
-Write-Host ""
-Write-Host "Next:"
-Write-Host "  1. Run: QUICKTASKS"
-Write-Host "  2. The first startup downloads default models if they are missing."
+Write-Host "✅ Installed → quicktasks"
+Write-Host "👉 Restart terminal if command not found"

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+echo "===== QuickTasks Installer ====="
+
 REPO="autotask05-pixel/quicktasksv2"
 BINARY_NAME="quicktasks"
 
@@ -16,7 +18,6 @@ esac
 
 echo "🎯 Variant: $INPUT_VARIANT → $VARIANT"
 
-# -------- OS --------
 OS="$(uname -s)"
 case "$OS" in
   Linux) OS_TYPE="unknown-linux-gnu" ;;
@@ -24,7 +25,6 @@ case "$OS" in
   *) echo "❌ Unsupported OS"; exit 1 ;;
 esac
 
-# -------- ARCH --------
 ARCH="$(uname -m)"
 case "$ARCH" in
   x86_64) ARCH_TYPE="x86_64" ;;
@@ -36,9 +36,9 @@ TARGET="${ARCH_TYPE}-${OS_TYPE}"
 FILE="${BINARY_NAME}-${VARIANT}-${TARGET}.tar.gz"
 
 URL="https://github.com/${REPO}/releases/latest/download/${FILE}"
+DATA_URL="https://raw.githubusercontent.com/${REPO}/main/data.json"
 
-echo "⬇️ $URL"
-
+echo "⬇️ Downloading binary..."
 TMP_DIR=$(mktemp -d)
 cd "$TMP_DIR"
 
@@ -47,43 +47,26 @@ tar -xzf pkg.tar.gz
 
 chmod +x $BINARY_NAME
 
-# -------- INSTALL BINARY --------
-INSTALL_PATH="/usr/local/bin/$BINARY_NAME"
+INSTALL_DIR="/usr/local/bin"
 
-if [ -w "/usr/local/bin" ]; then
-  mv $BINARY_NAME "$INSTALL_PATH"
+echo "⚙️ Installing binary → $INSTALL_DIR"
+
+if [ -w "$INSTALL_DIR" ]; then
+  mv $BINARY_NAME "$INSTALL_DIR/"
 else
-  sudo mv $BINARY_NAME "$INSTALL_PATH"
+  sudo mv $BINARY_NAME "$INSTALL_DIR/"
 fi
 
-echo "⚙️ Installed binary → $INSTALL_PATH"
+echo "📦 Installing data.json → $INSTALL_DIR/data.json"
 
-# -------- INSTALL data.json (repo version) --------
-DATA_URL="https://raw.githubusercontent.com/${REPO}/main/data.json"
-
-# 1. Try placing next to binary
-BIN_DIR="/usr/local/bin"
-DATA_TARGET="$BIN_DIR/data.json"
-
-echo "📦 Installing data.json → $DATA_TARGET"
-
-if [ -w "$BIN_DIR" ]; then
-  curl -fsSL "$DATA_URL" -o "$DATA_TARGET"
+if [ -w "$INSTALL_DIR" ]; then
+  curl -fsSL "$DATA_URL" -o "$INSTALL_DIR/data.json"
 else
-  sudo curl -fsSL "$DATA_URL" -o "$DATA_TARGET"
-fi
-
-# 2. Also place user copy (fallback)
-USER_DATA_DIR="$HOME/.quicktasks"
-mkdir -p "$USER_DATA_DIR"
-
-if [ ! -f "$USER_DATA_DIR/data.json" ]; then
-  echo "📦 Installing fallback data.json → $USER_DATA_DIR"
-  curl -fsSL "$DATA_URL" -o "$USER_DATA_DIR/data.json"
+  sudo curl -fsSL "$DATA_URL" -o "$INSTALL_DIR/data.json"
 fi
 
 cd ~
 rm -rf "$TMP_DIR"
 
-echo "✅ Install complete"
+echo "✅ Installed successfully!"
 echo "👉 Run: quicktasks"

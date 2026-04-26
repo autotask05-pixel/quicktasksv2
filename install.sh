@@ -62,38 +62,35 @@ echo "📦 Extracting..."
 tar -xzf package.tar.gz
 
 # ================= INSTALL =================
+
 INSTALL_BASE="/usr/local/lib/quicktasks"
 BIN_LINK="/usr/local/bin/quicktasks"
 
-echo "⚙️ Installing to $INSTALL_BASE"
-
-if [ -w "/usr/local/lib" ]; then
-  rm -rf "$INSTALL_BASE"
-  mkdir -p "$INSTALL_BASE"
-  cp -r ./* "$INSTALL_BASE/"
+# Decide if we need sudo ONCE
+if [ -w "/usr/local/lib" ] && [ -w "/usr/local/bin" ]; then
+  SUDO=""
 else
-  sudo rm -rf "$INSTALL_BASE"
-  sudo mkdir -p "$INSTALL_BASE"
-  sudo cp -r ./* "$INSTALL_BASE/"
+  SUDO="sudo"
 fi
 
-# Ensure binary executable
-chmod +x "$INSTALL_BASE/quicktasks"
+echo "⚙️ Installing to $INSTALL_BASE"
+
+# Clean + create
+$SUDO rm -rf "$INSTALL_BASE"
+$SUDO mkdir -p "$INSTALL_BASE"
+
+# Copy everything (binary + static + data.json)
+$SUDO cp -r ./* "$INSTALL_BASE/"
+
+# Ensure binary executable (WITH sudo if needed)
+$SUDO chmod +x "$INSTALL_BASE/quicktasks"
 
 # ================= SYMLINK =================
 echo "🔗 Linking binary to $BIN_LINK"
 
-if [ -w "/usr/local/bin" ]; then
-  ln -sf "$INSTALL_BASE/quicktasks" "$BIN_LINK"
-else
-  sudo ln -sf "$INSTALL_BASE/quicktasks" "$BIN_LINK"
-fi
-
-# ================= CLEANUP =================
-cd ~
-rm -rf "$TMP_DIR"
+$SUDO ln -sf "$INSTALL_BASE/quicktasks" "$BIN_LINK"
 
 echo ""
 echo "✅ Installation successful!"
-echo "📂 Files installed at: $INSTALL_BASE"
+echo "📂 Installed at: $INSTALL_BASE"
 echo "👉 Run: quicktasks"

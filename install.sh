@@ -4,7 +4,7 @@ set -e
 REPO="autotask05-pixel/quicktasksv2"
 BINARY_NAME="quicktasks"
 
-# ================= VARIANT =================
+# -------- Variant Mapping --------
 INPUT_VARIANT="${1:-ui}"
 
 case "$INPUT_VARIANT" in
@@ -14,14 +14,13 @@ case "$INPUT_VARIANT" in
   fire-and-forget-ui) VARIANT="fire-and-forget-ui" ;;
   *)
     echo "❌ Invalid variant: $INPUT_VARIANT"
-    echo "Valid: ui (default), noui, fire-and-forget, fire-and-forget-ui"
     exit 1
     ;;
 esac
 
 echo "🎯 Variant: $INPUT_VARIANT → $VARIANT"
 
-# ================= OS =================
+# -------- OS --------
 OS="$(uname -s)"
 case "$OS" in
   Linux) OS_TYPE="unknown-linux-gnu" ;;
@@ -32,7 +31,7 @@ case "$OS" in
     ;;
 esac
 
-# ================= ARCH =================
+# -------- ARCH --------
 ARCH="$(uname -m)"
 case "$ARCH" in
   x86_64) ARCH_TYPE="x86_64" ;;
@@ -44,53 +43,39 @@ case "$ARCH" in
 esac
 
 TARGET="${ARCH_TYPE}-${OS_TYPE}"
-EXT="tar.gz"
+FILE="${BINARY_NAME}-${VARIANT}-${TARGET}.tar.gz"
 
-FILE="${BINARY_NAME}-${VARIANT}-${TARGET}.${EXT}"
 URL="https://github.com/${REPO}/releases/latest/download/${FILE}"
 
-echo "📦 Target: $TARGET"
 echo "⬇️ Downloading: $URL"
 
-# ================= DOWNLOAD =================
 TMP_DIR=$(mktemp -d)
-cd "$TMP_DIR"
 
-curl -fL "$URL" -o package.tar.gz
+curl -fL "$URL" -o "$TMP_DIR/pkg.tar.gz"
 
-echo "📦 Extracting..."
-tar -xzf package.tar.gz
+echo "📦 Extracting to current directory..."
+tar -xzf "$TMP_DIR/pkg.tar.gz" -C .
 
-# ================= INSTALL =================
-INSTALL_BASE="/usr/local/lib/quicktasks"
-BIN_LINK="/usr/local/bin/quicktasks"
+# -------- Install binary only --------
+INSTALL_PATH="/usr/local/bin/$BINARY_NAME"
 
-# Detect if sudo is needed
-SUDO=""
-if [ ! -w "/usr/local/lib" ] || [ ! -w "/usr/local/bin" ]; then
-  SUDO="sudo"
+echo "⚙️ Installing binary → $INSTALL_PATH"
+
+chmod +x "./$BINARY_NAME"
+
+if [ -w "/usr/local/bin" ]; then
+  mv "./$BINARY_NAME" "$INSTALL_PATH"
+else
+  sudo mv "./$BINARY_NAME" "$INSTALL_PATH"
 fi
 
-echo "⚙️ Installing to $INSTALL_BASE"
-
-$SUDO rm -rf "$INSTALL_BASE"
-$SUDO mkdir -p "$INSTALL_BASE"
-
-# Copy full package (binary + static + data.json)
-$SUDO cp -r ./* "$INSTALL_BASE/"
-
-# Ensure binary is executable
-$SUDO chmod +x "$INSTALL_BASE/quicktasks"
-
-# ================= SYMLINK =================
-echo "🔗 Linking binary to $BIN_LINK"
-$SUDO ln -sf "$INSTALL_BASE/quicktasks" "$BIN_LINK"
-
-# ================= CLEANUP =================
-cd ~
 rm -rf "$TMP_DIR"
 
 echo ""
-echo "✅ Installation successful!"
-echo "📂 Installed at: $INSTALL_BASE"
-echo "👉 Run: quicktasks"
+echo "✅ Installed successfully!"
+echo "📁 Assets available in current directory:"
+echo "   - ./static/"
+echo "   - ./data.json"
+echo ""
+echo "👉 Run from here for UI:"
+echo "   $BINARY_NAME"

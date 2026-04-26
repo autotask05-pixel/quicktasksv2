@@ -13,8 +13,7 @@ case "$INPUT_VARIANT" in
   fire-and-forget) VARIANT="fire-and-forget" ;;
   fire-and-forget-ui) VARIANT="fire-and-forget-ui" ;;
   *)
-    echo " Invalid variant: $INPUT_VARIANT"
-    echo "Valid: ui (default), noui, fire-and-forget, fire-and-forget-ui"
+    echo "❌ Invalid variant: $INPUT_VARIANT"
     exit 1
     ;;
 esac
@@ -27,7 +26,7 @@ case "$OS" in
   Linux) OS_TYPE="unknown-linux-gnu" ;;
   Darwin) OS_TYPE="apple-darwin" ;;
   *)
-    echo " Unsupported OS: $OS"
+    echo "❌ Unsupported OS: $OS"
     exit 1
     ;;
 esac
@@ -38,7 +37,7 @@ case "$ARCH" in
   x86_64) ARCH_TYPE="x86_64" ;;
   aarch64|arm64) ARCH_TYPE="aarch64" ;;
   *)
-    echo " Unsupported architecture: $ARCH"
+    echo "❌ Unsupported architecture: $ARCH"
     exit 1
     ;;
 esac
@@ -46,27 +45,26 @@ esac
 TARGET="${ARCH_TYPE}-${OS_TYPE}"
 EXT="tar.gz"
 
-echo "📦 Target: $TARGET"
-
-# -------- VERSION --------
-VERSION=$(curl -s https://api.github.com/repos/$REPO/releases/latest | grep tag_name | cut -d '"' -f 4)
-
-[ -z "$VERSION" ] && { echo "❌ Failed to fetch version"; exit 1; }
-
 FILE="${BINARY_NAME}-${VARIANT}-${TARGET}.${EXT}"
-URL="https://github.com/${REPO}/releases/download/${VERSION}/${FILE}"
 
-echo " $URL"
+# 🔥 KEY CHANGE: no API, direct latest download
+URL="https://github.com/${REPO}/releases/latest/download/${FILE}"
+
+echo "⬇️ Downloading: $URL"
 
 TMP_DIR=$(mktemp -d)
 cd "$TMP_DIR"
 
-curl -L "$URL" -o pkg.tar.gz
-tar -xzf pkg.tar.gz
+curl -fL "$URL" -o package.tar.gz
+
+echo "📦 Extracting..."
+tar -xzf package.tar.gz
 
 chmod +x $BINARY_NAME
 
 INSTALL_PATH="/usr/local/bin/$BINARY_NAME"
+
+echo "⚙️ Installing to $INSTALL_PATH"
 
 if [ -w "/usr/local/bin" ]; then
   mv $BINARY_NAME "$INSTALL_PATH"
@@ -74,6 +72,8 @@ else
   sudo mv $BINARY_NAME "$INSTALL_PATH"
 fi
 
-cd ~ && rm -rf "$TMP_DIR"
+cd ~
+rm -rf "$TMP_DIR"
 
-echo " Installed → $BINARY_NAME"
+echo "✅ Installed successfully!"
+echo "👉 Run: $BINARY_NAME"
